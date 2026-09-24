@@ -16,6 +16,8 @@ license or permission to redistribute or build on it. Third-party package licens
 remain their own. The screenshots above show this project's UI; third-party visual
 references are not distributed here.
 
+[Download this prototype's 0.2.1 source ZIP](../../archive/refs/tags/0.2.1.zip).
+
 **Demo credits only. No real-money deposits, withdrawals, crypto or payment processing.**
 Nothing in this repository is a licensed gambling product; compliance, KYC, AML and tax
 flows are *simulated visually* only.
