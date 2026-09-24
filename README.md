@@ -81,51 +81,30 @@ Conventions:
 - Status/type columns are `TEXT`, validated by the string unions in `@sharedplay/types`.
 - Ledger entries carry `prevHash`/`entryHash` (SHA-256 chain) for an audit-style trail.
 
-## 3. Route structure
+## 3. Routes in this snapshot
 
 | Route | Purpose |
 |---|---|
 | `/` | Marketing landing — "The casino built for playing together." |
-| `/login`, `/signup` | Auth (demo accounts seeded, password `demo1234`) |
-| `/lobby` | Casino homepage: featured, play-with-friends, games, social |
-| `/casino/temple-of-zeus` | Temple of Zeus — solo play |
-| `/casino/roulette` | European Roulette — solo play |
-| `/sharedplay` | SharedPlay hub: create session, join by code, active sessions |
-| `/sharedplay/join/[token]` | Invitation landing → contribute → join |
-| `/session/[id]` | **Shared session screen** (game left, SharedPlay panel right) |
-| `/squads`, `/squads/[id]` | Persistent groups, stats, history |
-| `/friends` | Friend search / requests / online presence |
-| `/activity` | Social feed (privacy toggle) |
-| `/profile` | Profile, wallet history, responsible-gaming limits |
-| `/history` | Session history + settlement records |
-| `/admin` | Investor analytics dashboard + simulated compliance console |
-| `/investor-demo` | Scripted 5-minute walkthrough |
-| `POST /api/auth/*` | signup · login · logout · session |
+| `/login`, `/signup` | Demo-account authentication |
+| `/lobby` | Casino lobby |
+| `/games`, `/games/[slug]` | Game list and game screen |
+| `/sessions`, `/sessions/new`, `/sessions/[id]` | SharedPlay sessions |
+| `/invite/[token]` | Invitation landing |
+| `/api/auth/*` | Signup, login, logout, current session |
 | `POST /api/solo/spin` | Server-authoritative solo round |
-| `POST /api/sessions/*` | create · invite · (join/contribute/start via socket) |
-| `POST /api/social/*` | friends · squads · feed |
-| `GET /api/analytics/dashboard` | Investor metrics + charts |
+| `/api/sessions`, `/api/sessions/join` | Session creation and join |
 
 Socket.IO namespaces: single default namespace, rooms per session id.
 Client→server events are declared in `@sharedplay/types` (`ClientToServerEvents`).
 
-## 4. Implementation plan (build priority)
+## 4. Scope
 
-| Phase | Scope | Status |
-|---|---|---|
-| 0 | Architecture, schema, contracts, game engine, SharedPlay engine | ✅ |
-| 1 | Auth, demo wallet, casino lobby | ✅ |
-| 2 | Temple of Zeus solo | ✅ |
-| 3 | SharedPlay create → invite → join → contribute → ownership → bankroll | ✅ |
-| 4 | Realtime synchronized game (one server-authoritative state) | ✅ |
-| 5 | Control switching, chat, reactions, voting | ✅ |
-| 6 | Multiplayer Zeus bonus (vote path, ZEUS POWER team meter) | ✅ |
-| 7 | Settlement, ledger, history | ✅ |
-| 8 | Friends, squads | ✅ |
-| 9 | Analytics events + investor dashboard | ✅ |
-| 10 | Investor demo mode | ✅ |
-| 11 | Roulette (SharedPlay bet votes) | ✅ |
-| 12 | Mobile polish, animations, RG limits, compliance console | ✅ |
+This snapshot includes the SharedPlay engine, a deterministic game engine,
+server-side session handling, a lobby, a slot game, demo accounts, and desktop/mobile
+UI work. The domain packages have automated tests. The broader social, analytics,
+roulette, and regulated-casino features described as future architecture are not
+implemented routes in this snapshot.
 
 Out of scope on purpose: real deposits/withdrawals, payments, crypto, real KYC/AML/tax,
 licences, VIP/affiliate systems, hundreds of games, sports, poker, native apps.
