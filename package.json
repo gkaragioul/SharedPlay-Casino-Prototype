@@ -1,0 +1,19 @@
+{
+  "name": "sharedplay-casino",
+  "version": "0.2.1",
+  "private": true,
+  "packageManager": "pnpm@9.15.4",
+  "scripts": {
+    "dev": "pnpm --filter @sharedplay/web dev",
+    "build": "pnpm --filter @sharedplay/web build",
+    "start": "pnpm --filter @sharedplay/web start",
+    "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
+    "db:generate": "pnpm --filter @sharedplay/db generate",
+    "db:migrate": "pnpm --filter @sharedplay/db migrate",
+    "db:push": "pnpm --filter @sharedplay/db push",
+    "db:seed": "pnpm --filter @sharedplay/db seed",
+    "db:reset": "pnpm --filter @sharedplay/db reset",
+    "sim:rtp": "pnpm --filter @sharedplay/games sim:rtp"
+  }
+}

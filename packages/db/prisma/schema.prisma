@@ -1,0 +1,333 @@
+// SharedPlay Casino — prototype schema.
+//
+// DEMO CREDITS ONLY. There is no payment, KYC, AML or tax integration here.
+// Status/type columns are TEXT validated by TypeScript unions (see @sharedplay/types)
+// because Prisma's SQLite connector does not enforce enums at the database level.
+// All credit amounts are Int, and ownership is stored in basis points, so the
+// money path never touches floating point.
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../src/generated/prisma"
+}
+
+model User {
+  id           String   @id @default(cuid())
+  username     String   @unique
+  displayName  String
+  avatar       String?
+  passwordHash String
+  demoBalance  Int      @default(10000)
+  isAdmin      Boolean  @default(false)
+  feedOptOut   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  hostedSessions  SharedSession[]             @relation("SessionHost")
+  participations  SessionParticipant[]
+  ledgerEntries   SessionLedgerEntry[]        @relation("LedgerActor")
+  rounds          GameRound[]
+  votesCreated    Vote[]                      @relation("VoteCreator")
+  voteResponses   VoteResponse[]
+  chatMessages    ChatMessage[]
+  reactions       Reaction[]
+  invitationsSent Invitation[]                @relation("InviteSender")
+  squadMemberships SquadMember[]
+  rgSettings      ResponsibleGamingSettings?
+  notifications   Notification[]
+  analyticsEvents AnalyticsEvent[]
+  soloGames       SoloGameState[]
+}
+
+model Friendship {
+  id          String   @id @default(cuid())
+  requesterId String
+  addresseeId String
+  status      String // PENDING | ACCEPTED | BLOCKED
+  createdAt   DateTime @default(now())
+
+  @@unique([requesterId, addresseeId])
+}
+
+model Squad {
+  id        String   @id @default(cuid())
+  name      String
+  avatar    String?
+  ownerId   String
+  createdAt DateTime @default(now())
+
+  members  SquadMember[]
+  sessions SharedSession[]
+}
+
+model SquadMember {
+  id       String   @id @default(cuid())
+  squadId  String
+  userId   String
+  role     String // OWNER | MEMBER
+  joinedAt DateTime @default(now())
+
+  squad Squad @relation(fields: [squadId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([squadId, userId])
+}
+
+model Game {
+  id                 String  @id @default(cuid())
+  slug               String  @unique
+  name               String
+  type               String // SLOT | ROULETTE | BLACKJACK
+  multiplayerEnabled Boolean @default(false)
+  config             Json?
+
+  sessions  SharedSession[]
+  rounds    GameRound[]
+  soloStates SoloGameState[]
+}
+
+/** Per-user solo game state (reels, meters) — server authoritative. */
+model SoloGameState {
+  id        String   @id @default(cuid())
+  userId    String
+  gameId    String
+  stateJson Json
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  game Game @relation(fields: [gameId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, gameId])
+}
+
+model SharedSession {
+  id                   String    @id @default(cuid())
+  code                 String    @unique
+  gameId               String
+  hostId               String
+  squadId              String?
+  status               String // LOBBY | ACTIVE | CLOSING | CLOSED
+  initialBankroll      Int       @default(0)
+  currentBankroll      Int       @default(0)
+  currentControllerId  String?
+  maxParticipants      Int       @default(8)
+  stateJson            Json?
+  spinCount            Int       @default(0)
+  controlRotationEvery Int       @default(10)
+  rngMode              String    @default("random")
+  rngSeed              String?
+  ledgerSeq            Int       @default(0)
+  lastLedgerHash       String?
+  createdAt            DateTime  @default(now())
+  startedAt            DateTime?
+  closedAt             DateTime?
+
+  host         User                 @relation("SessionHost", fields: [hostId], references: [id])
+  game         Game                 @relation(fields: [gameId], references: [id])
+  squad        Squad?               @relation(fields: [squadId], references: [id])
+  participants SessionParticipant[]
+  ledger       SessionLedgerEntry[]
+  rounds       GameRound[]
+  votes        Vote[]
+  chatMessages ChatMessage[]
+  reactions    Reaction[]
+  activities   SessionActivity[]
+  invitations  Invitation[]
+
+  @@index([status])
+  @@index([hostId])
+}
+
+model SessionParticipant {
+  id              String    @id @default(cuid())
+  sessionId       String
+  userId          String
+  contribution    Int       @default(0)
+  ownershipBp     Int       @default(0)
+  finalSettlement Int?
+  isController    Boolean   @default(false)
+  joinedAt        DateTime  @default(now())
+  leftAt          DateTime?
+
+  session SharedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([sessionId, userId])
+}
+
+model SessionLedgerEntry {
+  id            String   @id @default(cuid())
+  sessionId     String
+  seq           Int
+  type          String // CONTRIBUTION | BET | WIN | BONUS | ADJUSTMENT | SETTLEMENT
+  amount        Int
+  balanceBefore Int
+  balanceAfter  Int
+  actorId       String?
+  metadata      Json?
+  prevHash      String?
+  entryHash     String
+  createdAt     DateTime @default(now())
+
+  session SharedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  actor   User?         @relation("LedgerActor", fields: [actorId], references: [id])
+
+  @@unique([sessionId, seq])
+  @@index([sessionId])
+}
+
+model GameRound {
+  id             String   @id @default(cuid())
+  sessionId      String?
+  userId         String?
+  gameId         String
+  bet            Int
+  payout         Int
+  result         Json
+  bonusTriggered Boolean  @default(false)
+  createdAt      DateTime @default(now())
+
+  session SharedSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User?          @relation(fields: [userId], references: [id])
+  game    Game           @relation(fields: [gameId], references: [id])
+
+  @@index([sessionId])
+  @@index([userId])
+}
+
+model Invitation {
+  id                    String    @id @default(cuid())
+  sessionId             String
+  senderId              String
+  recipientId           String?
+  token                 String    @unique
+  status                String // PENDING | OPENED | ACCEPTED | DECLINED | EXPIRED
+  suggestedContribution Int?
+  createdAt             DateTime  @default(now())
+  expiresAt             DateTime?
+
+  session SharedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sender  User          @relation("InviteSender", fields: [senderId], references: [id])
+}
+
+model Vote {
+  id          String    @id @default(cuid())
+  sessionId   String
+  type        String // CASH_OUT | LARGE_BET | BONUS_OPTION | PASS_CONTROL
+  status      String // OPEN | PASSED | FAILED | CANCELLED
+  rule        String    @default("MAJORITY")
+  config      Json?
+  payload     Json?
+  createdById String
+  createdAt   DateTime  @default(now())
+  resolvedAt  DateTime?
+
+  session   SharedSession   @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  createdBy User            @relation("VoteCreator", fields: [createdById], references: [id])
+  responses VoteResponse[]
+
+  @@index([sessionId, status])
+}
+
+model VoteResponse {
+  id        String   @id @default(cuid())
+  voteId    String
+  userId    String
+  choice    String // YES | NO | <bonus option>
+  createdAt DateTime @default(now())
+
+  vote Vote @relation(fields: [voteId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([voteId, userId])
+}
+
+model ChatMessage {
+  id        String    @id @default(cuid())
+  sessionId String?
+  squadId   String?
+  userId    String
+  body      String
+  createdAt DateTime  @default(now())
+
+  session SharedSession? @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model Reaction {
+  id        String   @id @default(cuid())
+  sessionId String
+  squadId   String?
+  userId    String
+  emoji     String
+  createdAt DateTime @default(now())
+
+  session SharedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user    User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model SessionActivity {
+  id        String   @id @default(cuid())
+  sessionId String
+  userId    String?
+  type      String
+  message   String
+  metadata  Json?
+  createdAt DateTime @default(now())
+
+  session SharedSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@index([sessionId, createdAt])
+}
+
+model AnalyticsEvent {
+  id        String   @id @default(cuid())
+  name      String
+  userId    String?
+  sessionId String?
+  squadId   String?
+  props     Json?
+  createdAt DateTime @default(now())
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([name])
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model ResponsibleGamingSettings {
+  id                         String    @id @default(cuid())
+  userId                     String    @unique
+  dailyDemoLimit             Int?
+  sessionDurationReminderMin Int?      @default(60)
+  lossLimit                  Int?
+  breakUntil                 DateTime?
+  updatedAt                  DateTime  @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  type      String
+  title     String
+  body      String?
+  data      Json?
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+}

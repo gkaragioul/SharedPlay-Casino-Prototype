@@ -1,0 +1,156 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * SharedPlay Casino — base layer.
+ * Premium European casino: deep charcoal, gold/bronze, restrained green.
+ */
+:root {
+  color-scheme: dark;
+}
+
+html {
+  background-color: theme("colors.ink.950");
+}
+
+body {
+  @apply bg-ink-950 text-stone-200 font-sans antialiased;
+  min-height: 100dvh;
+}
+
+::selection {
+  background: rgba(193, 147, 64, 0.35);
+}
+
+/* Thin, quiet scrollbars */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(193, 147, 64, 0.35) transparent;
+}
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+*::-webkit-scrollbar-thumb {
+  background: rgba(193, 147, 64, 0.3);
+  border-radius: 999px;
+}
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-white/[0.06] bg-ink-850 shadow-panel;
+  }
+
+  .panel-subtle {
+    @apply rounded-xl border border-white/[0.05] bg-ink-900/70;
+  }
+
+  .gold-text {
+    background: linear-gradient(120deg, #f3e5c8 0%, #d0a755 45%, #a47a33 75%, #e9d2a1 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl font-semibold
+      transition-all duration-150 select-none disabled:cursor-not-allowed disabled:opacity-40
+      focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-gold-400/60
+      focus-visible:ring-offset-2 focus-visible:ring-offset-ink-950;
+  }
+
+  .btn-gold {
+    @apply btn bg-gold-sheen text-ink-950 shadow-gold hover:brightness-110 active:scale-[0.98];
+  }
+
+  .btn-green {
+    @apply btn bg-lucky-500 text-ink-950 hover:bg-lucky-400 active:scale-[0.98];
+  }
+
+  .btn-ghost {
+    @apply btn border border-white/10 bg-white/[0.03] text-stone-200 hover:border-gold-500/40
+      hover:bg-gold-500/10 hover:text-gold-100 active:scale-[0.98];
+  }
+
+  .btn-danger {
+    @apply btn border border-danger/40 bg-danger/10 text-danger hover:bg-danger/20 active:scale-[0.98];
+  }
+
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-white/10
+      bg-white/[0.04] px-3 py-1.5 text-xs font-semibold tracking-wide2 text-stone-300
+      transition-colors hover:border-gold-500/40 hover:text-gold-200;
+  }
+
+  .chip-active {
+    @apply border-gold-500/60 bg-gold-500/15 text-gold-200;
+  }
+
+  .label {
+    @apply text-[11px] font-bold uppercase tracking-luxe text-stone-500;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-white/10 bg-ink-900 px-4 py-3 text-stone-100
+      placeholder:text-stone-600 transition-colors
+      focus:border-gold-500/60 focus:outline-none focus:ring-1 focus:ring-gold-500/40;
+  }
+
+  .divider {
+    @apply h-px w-full bg-gradient-to-r from-transparent via-gold-700/30 to-transparent;
+  }
+}
+
+/* ─── site art / motion ─────────────────────────────────────────────── */
+.art-rays {
+  background: repeating-conic-gradient(from 0deg at 50% 45%, rgba(255, 220, 120, 0.1) 0deg 8deg, transparent 8deg 20deg);
+  animation: art-rays 40s linear infinite;
+}
+@keyframes art-rays { to { transform: rotate(360deg) scale(1.6); } }
+.art-float { animation: art-float 5s ease-in-out infinite; }
+.art-float-slow { animation: art-float 8s ease-in-out infinite reverse; }
+@keyframes art-float {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -8px; }
+}
+.landing-glow {
+  background: radial-gradient(circle, rgba(157, 108, 240, 0.35), transparent 65%);
+  filter: blur(20px);
+}
+.landing-cta { animation: pulse-gold 2s ease-in-out infinite; }
+.landing-marquee { animation: marquee 36s linear infinite; }
+@keyframes marquee { to { transform: translateX(-50%); } }
+.story-ring { transition: transform 0.2s; }
+.story-ring:hover { transform: scale(1.06); }
+.game-tile { transition: transform 0.25s, box-shadow 0.25s, border-color 0.25s; }
+.game-tile:hover {
+  transform: translateY(-4px);
+  border-color: rgba(208, 167, 85, 0.5);
+  box-shadow: 0 20px 40px -18px rgba(208, 167, 85, 0.55);
+}
+@media (prefers-reduced-motion: reduce) {
+  .art-rays, .art-float, .art-float-slow, .landing-marquee, .landing-cta { animation: none; }
+}
+
+@layer utilities {
+  .balance-shine {
+    background: linear-gradient(90deg, #f3e5c8, #d0a755, #f3e5c8);
+    background-size: 200% 100%;
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    animation: shimmer 3s linear infinite;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}

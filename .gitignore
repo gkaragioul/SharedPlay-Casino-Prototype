@@ -1,0 +1,33 @@
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+
+# local database (schema + migrations are committed, the data file is not)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+.env
+.env.local
+.env.*.local
+
+# editors / os
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+
+# browser-test screenshots
+.screenshots/
+UISamples/
+.claude/
+.commandcode/
+packages/db/src/generated/
+*.tsbuildinfo
+
+*.log
+pnpm-debug.log*
