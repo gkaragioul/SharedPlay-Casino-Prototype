@@ -22,6 +22,9 @@ references are not distributed here.
 Nothing in this repository is a licensed gambling product; compliance, KYC, AML and tax
 flows are *simulated visually* only.
 
+The software is provided as is, without warranty of any kind; you use it at your own
+risk.
+
 Do not expose this demo to the public internet as-is. Set a unique `AUTH_SECRET` and
 replace seeded demo credentials before any deployment; see `.env.example`.
 
@@ -34,11 +37,15 @@ replace seeded demo credentials before any deployment; see `.env.example`.
 
 ```
 apps/web                      Next.js (App Router) + custom Node server + Socket.IO
-  ├─ pages/UI                 Casino lobby, games, SharedPlay screens, admin, landing
-  ├─ /api/*                   REST route handlers (auth, wallet, solo game, social, admin)
+  ├─ src/app/                 Pages: landing, login/signup, lobby, games, sessions, invite
+  ├─ src/app/api/             7 REST route handlers: auth (signup, login, logout, me),
+  │                           sessions (create, join), solo spin (see section 3)
+  ├─ src/components/          Slot machine, shared table and site UI
   └─ server/                  Custom server: Next + Socket.IO in one process
-       ├─ realtime/           Server-authoritative SharedPlay session hub
-       └─ services/           Session service, voting, settlement, solo play, RG checks
+       │                      (index.ts, socket.ts)
+       └─ realtime/           Server-authoritative SharedPlay session hub: session
+                              service (voting, settlement), state and views, locks,
+                              presence, demo bot, responsible-gaming checks
 
 packages/sharedplay           SharedPlay ENGINE (pure domain, no I/O, no framework)
   ownership · ledger hash chain · votes · control rotation · session rules
